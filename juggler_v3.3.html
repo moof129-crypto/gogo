@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ジャグラー判別ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/* ===== リセット & ベース ===== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+
+/* ===== 老眼対応フォントサイズ（一箇所のみ） ===== */
+:root {
+  --font-base: 17px;
+  --font-sm: 14px;
+  --font-xs: 13px;
+  --font-xxs: 12px;
+  --color-text: #ffffff;
+  --color-muted: #c0c0d0;
+  --color-dim: #7a7a9a;
+  --color-dimmer: #5a5a7a;
+  --color-accent: #00e5ff;
+  --color-pink: #ff3d6e;
+  --color-bg: #0a0a0f;
+  --color-card: #111118;
+  --color-border: #252535;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: var(--font-base);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 15% 15%, rgba(255,61,110,.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(0,229,255,.07) 0%, transparent 55%);
+}
+
+.wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 12px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== ヘッダー ===== */
+header {
+  text-align: center;
+  padding: 32px 0 22px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-pink), var(--color-accent), transparent);
+}
+
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(20px, 5.5vw, 38px);
+  font-weight: 900;
+  letter-spacing: .18em;
+  background: linear-gradient(135deg, #ff3d6e 0%, #ff8c00 40%, #00e5ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sub { font-size: var(--font-xxs); letter-spacing: .32em; color: var(--color-dim); margin-top: 6px; text-transform: uppercase; }
+.ver { display: inline-block; margin-top: 10px; padding: 4px 14px; border-radius: 20px; border: 1px solid rgba(0,229,255,.3); font-size: var(--font-xxs); letter-spacing: .2em; color: var(--color-accent); text-transform: uppercase; }
+
+/* ===== セクション ===== */
+.section {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 16px 14px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-pink), var(--color-accent));
+  opacity: .45;
+}
+.sec-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: var(--font-xs);
+  letter-spacing: .25em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* ===== ページタブ ===== */
+.ptabs { display: flex; gap: 8px; margin-bottom: 10px; }
+.ptab {
+  flex: 1;
+  padding: 13px 0;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-dim);
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  transition: all .2s;
+}
+.ptab:hover { border-color: var(--color-accent); color: var(--color-text); }
+.ptab.active {
+  background: linear-gradient(135deg, rgba(0,229,255,.15), rgba(255,61,110,.08));
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  box-shadow: 0 0 24px rgba(0,229,255,.35);
+}
+
+/* ===== ドロップダウン ===== */
+select {
+  width: 100%;
+  background-color: #1a1a2e;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  border: 2px solid var(--color-accent);
+  border-radius: 10px;
+  padding: 14px 44px 14px 16px;
+  font-size: 17px;
+  font-weight: 700;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='14'%3E%3Cpath d='M0 0l10 14 10-14' fill='%2300e5ff'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+select option { background-color: #111118; color: #ffffff; }
+
+/* ===== インプットブロック ===== */
+.iblock { margin-bottom: 14px; }
+.iblock:last-child { margin-bottom: 0; }
+.iblock-title {
+  font-size: var(--font-sm);
+  letter-spacing: .18em;
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-transform: uppercase;
+}
+.iblock-title::before { content: ''; display: inline-block; width: 3px; height: 15px; border-radius: 2px; flex-shrink: 0; }
+.iblock-title.req { color: #ffd700; }
+.iblock-title.req::before { background: #ffd700; }
+.iblock-title.opt { color: var(--color-dim); }
+.iblock-title.opt::before { background: #5a5a7a; }
+.badge-opt { margin-left: 4px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,.06); font-size: var(--font-xxs); letter-spacing: .1em; color: var(--color-dimmer); }
+
+.igrid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.igrid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.igroup { display: flex; flex-direction: column; gap: 5px; }
+
+label { font-size: var(--font-sm); color: var(--color-muted); letter-spacing: .05em; }
+.hint { font-size: var(--font-xxs); color: rgba(180,180,210,.65); line-height: 1.5; }
+
+input[type=number], input[type=text], input[type=password] {
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-text);
+  padding: 11px 12px;
+  font-size: 18px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  width: 100%;
+  min-height: 48px;
+  transition: all .2s;
+  -moz-appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type=number]:focus, input[type=text]:focus, input[type=password]:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 24px rgba(0,229,255,.3);
+  background: rgba(0,229,255,.04);
+}
+input.opt { border-style: dashed; }
+input[readonly] { opacity: .8; cursor: default; }
+
+/* スタート入力の色 */
+.start-input { background: rgba(255,165,0,.07) !important; border-color: rgba(255,165,0,.3) !important; }
+/* 自回転数の色 */
+.my-input { background: rgba(0,255,136,.05) !important; border-color: rgba(0,255,136,.2) !important; }
+
+.divider { height: 1px; background: #1e1e2e; margin: 14px 0; }
+
+/* ===== ボタン ===== */
+.cbtn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff3d6e, #ff7a00);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  box-shadow: 0 4px 22px rgba(255,61,110,.4);
+  margin-top: 6px;
+}
+.cbtn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,61,110,.6); }
+.cbtn:active { transform: translateY(0); }
+
+.rbtn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-dim);
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: var(--font-sm);
+  transition: all .2s;
+}
+.rbtn:hover { border-color: var(--color-pink); color: var(--color-text); }
+
+.mtab {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-dim);
+  padding: 9px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: var(--font-sm);
+  transition: all .2s;
+}
+.mtab:hover { border-color: var(--color-pink); color: var(--color-text); }
+.mtab.active {
+  background: linear-gradient(135deg, rgba(255,61,110,.18), rgba(0,229,255,.07));
+  border-color: var(--color-pink);
+  color: var(--color-pink);
+  box-shadow: 0 0 20px rgba(255,61,110,.4);
+}
+
+.sticky-btn {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  padding: 8px 0;
+  background: linear-gradient(0deg, #0a0a0f 65%, transparent 100%);
+}
+
+.footnote { font-size: var(--font-xxs); color: var(--color-dimmer); text-align: center; margin-top: 8px; opacity: .8; line-height: 1.8; }
+
+/* ===== 注記ボックス ===== */
+.caution-box {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(255,215,0,.06);
+  border: 1px solid rgba(255,215,0,.3);
+  border-radius: 10px;
+}
+.caution-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.caution-text { font-size: var(--font-xxs); color: var(--color-muted); line-height: 1.9; }
+.caution-hi { color: #ffd700; font-weight: 700; }
+
+.estimated-note {
+  display: none;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255,200,0,.08);
+  border: 1px solid rgba(255,200,0,.25);
+  font-size: var(--font-xxs);
+  color: #ffd700;
+  line-height: 1.7;
+}
+
+/* ===== 結果エリア ===== */
+.srow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.scard {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 13px 10px;
+  text-align: center;
+}
+.slabel { font-size: var(--font-xxs); color: var(--color-dim); letter-spacing: .1em; margin-bottom: 5px; text-transform: uppercase; }
+.sval { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: var(--color-accent); }
+.snote { font-size: 11px; color: var(--color-dimmer); margin-top: 3px; line-height: 1.5; }
+
+/* 信頼度バー */
+.conf-wrap { margin-bottom: 18px; }
+.conf-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.conf-lbl { font-size: var(--font-xxs); color: var(--color-dim); letter-spacing: .18em; text-transform: uppercase; }
+.conf-pct { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; }
+.conf-bar { height: 9px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; }
+.conf-fill { height: 100%; border-radius: 4px; width: 0%; transition: width 1.1s cubic-bezier(.16,1,.3,1); background: linear-gradient(90deg, #ff3d6e, #ffd700, #00ff88); }
+.conf-note { font-size: var(--font-xxs); color: var(--color-dimmer); margin-top: 5px; }
+
+/* 設定バー */
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.brow { display: flex; align-items: center; gap: 12px; }
+.blabel { font-family: 'Orbitron', sans-serif; font-size: 11px; width: 50px; flex-shrink: 0; color: var(--color-dim); }
+.blabel b { font-size: 17px; font-weight: 700; }
+.btrack { flex: 1; height: 30px; background: rgba(255,255,255,.04); border-radius: 7px; overflow: hidden; border: 1px solid var(--color-border); }
+.bfill { height: 100%; border-radius: 7px; width: 0%; transition: width .95s cubic-bezier(.16,1,.3,1); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; }
+.bpct { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: rgba(0,0,0,.85); white-space: nowrap; }
+
+/* 内訳 */
+.bdwrap { margin-top: 16px; padding: 16px; background: rgba(255,255,255,.02); border: 1px solid var(--color-border); border-radius: 11px; }
+.bdtitle { font-size: 14px; color: var(--color-accent); letter-spacing: .1em; margin-bottom: 12px; font-weight: 700; }
+.bdgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bditem { background: rgba(255,255,255,.03); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 8px; text-align: center; }
+.bdfactor { font-size: var(--font-xxs); color: var(--color-dim); letter-spacing: .1em; margin-bottom: 4px; text-transform: uppercase; }
+.bdobs { font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; color: var(--color-text); }
+.bdexp { font-size: 11px; color: var(--color-dimmer); margin-top: 2px; }
+.bddiff { font-size: 11px; font-weight: 700; margin-top: 3px; }
+.ok { color: #00ff88; } .warn { color: #ffd700; } .bad { color: #ff3d6e; }
+
+/* 判定 */
+.verdict { margin-top: 16px; padding: 18px 20px; border-radius: 11px; text-align: center; }
+.verdict.high { background: linear-gradient(135deg, rgba(0,255,136,.09), rgba(0,229,255,.07)); border: 1px solid rgba(0,255,136,.35); }
+.verdict.mid  { background: linear-gradient(135deg, rgba(255,215,0,.08), rgba(255,100,0,.06)); border: 1px solid rgba(255,215,0,.3); }
+.verdict.low  { background: rgba(255,255,255,.02); border: 1px solid var(--color-border); }
+.vt { font-family: 'Orbitron', sans-serif; font-size: 15px; letter-spacing: .1em; margin-bottom: 9px; }
+.vb { font-size: var(--font-sm); color: var(--color-dim); line-height: 2.0; }
+
+/* 期待収支グリッド */
+.evwrap { margin-top: 16px; padding: 16px; background: rgba(255,255,255,.02); border: 1px solid var(--color-border); border-radius: 11px; }
+.evtitle { font-size: var(--font-xxs); color: var(--color-dim); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 14px; }
+.evgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.evcard { background: rgba(255,255,255,.03); border: 1px solid var(--color-border); border-radius: 8px; padding: 11px 6px; text-align: center; }
+.evcard.top { border-color: var(--color-pink); background: rgba(255,61,110,.09); }
+.evs { font-family: 'Orbitron', sans-serif; font-size: 11px; color: var(--color-dim); margin-bottom: 4px; }
+.evn { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; }
+.evn.p { color: #00ff88; } .evn.n { color: #ff3d6e; }
+.evl { font-size: 10px; color: var(--color-dimmer); margin-top: 2px; }
+.evp { font-size: 12px; color: var(--color-accent); margin-top: 5px; font-weight: 700; }
+
+/* ぶどう逆算 設定バー行 */
+.gp-brow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.gp-slabel { font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; width: 48px; flex-shrink: 0; }
+.gp-track { flex: 1; height: 9px; background: var(--color-border); border-radius: 4px; overflow: hidden; }
+.gp-fill { height: 100%; border-radius: 4px; width: 0%; transition: width .6s ease; }
+.gp-theory { font-size: 12px; color: var(--color-dim); min-width: 68px; flex-shrink: 0; }
+.gp-diff { font-size: 12px; min-width: 60px; text-align: right; }
+.gp-ok  { color: #00ff88; }
+.gp-hi  { color: var(--color-accent); }
+.gp-lo  { color: var(--color-dim); }
+
+/* AI チャット */
+#ai-messages { font-size: 16px !important; line-height: 2.0; color: var(--color-text); white-space: pre-wrap; }
+#ai-input    { font-size: 16px; }
+
+/* アニメーション */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.anim { animation: fadeUp .35s ease forwards; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">ジャグラー判別ツール</div>
+  <div class="sub">設定判別 &amp; 期待値計算システム</div>
+  <div class="ver">▸ 多次元ベイズ推定 Ver 3.3</div>
+</header>
+
+<!-- ページタブ -->
+<div class="ptabs">
+  <button class="ptab active" onclick="switchPage('analyzer',this)">⚙ 設定判別</button>
+  <button class="ptab" onclick="switchPage('grape',this)">🍇 ぶどう逆算</button>
+</div>
+
+<!-- ========== 設定判別ページ ========== -->
+<div id="page-analyzer">
+
+  <!-- 機種選択 -->
+  <div class="section">
+    <div class="sec-title">▸ 機種選択 <span style="font-size:13px;color:var(--color-accent);font-weight:400">▼ タップして変更</span></div>
+    <select id="machine-select" onchange="selMDropdown(this.value)">
+      <option value="aime">アイムジャグラーEX-TP</option>
+      <option value="neo">ネオアイムジャグラーEX</option>
+      <option value="gogo3">ゴーゴージャグラー3</option>
+      <option value="my5">マイジャグラー5</option>
+      <option value="funky2">ファンキージャグラー2</option>
+      <option value="happyv3">ハッピージャグラーV3</option>
+      <option value="girlsss">ジャグラーガールズSS</option>
+      <option value="mr">ミスタージャグラー</option>
+      <option value="ultra">ウルトラミラクルジャグラー</option>
+    </select>
+    <div id="estimated-note" class="estimated-note"></div>
+  </div>
+
+  <!-- 打ち始めデータ -->
+  <div class="section">
+    <div class="sec-title">▸ 打ち始め時点のデータ <span style="font-size:12px;color:var(--color-dim);font-weight:400">（朝一から打つ場合は空欄でOK）</span></div>
+    <div class="igrid-3">
+      <div class="igroup">
+        <label>ゲーム数</label>
+        <input type="number" id="start-games" placeholder="0" min="0" class="start-input" oninput="calcMySample()">
+      </div>
+      <div class="igroup">
+        <label>BIG</label>
+        <input type="number" id="start-big" placeholder="0" min="0" class="start-input" oninput="calcMySample()">
+      </div>
+      <div class="igroup">
+        <label>REG</label>
+        <input type="number" id="start-reg" placeholder="0" min="0" class="start-input" oninput="calcMySample()">
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="igroup">
+        <label>差枚数 <span style="font-size:11px;color:var(--color-dimmer)">（任意・ホール表示がある場合）</span></label>
+        <input type="number" id="start-diff" placeholder="例: -800　マイナスも可" class="start-input">
+      </div>
+    </div>
+    <button class="cbtn" style="margin-top:12px;background:linear-gradient(135deg,#1a4a6a,#0a6a5a);box-shadow:0 4px 18px rgba(0,200,150,.3)" onclick="analyzeStart()">
+      📊 前任者データを解析する
+    </button>
+  </div>
+
+  <!-- 前任者データ解析結果 -->
+  <div class="section anim" id="start-result" style="display:none">
+    <div class="sec-title">▸ 前任者データ解析</div>
+    <div id="start-result-inner"></div>
+  </div>
+
+  <!-- データ入力 -->
+  <div class="section">
+    <div class="sec-title">▸ データ入力</div>
+
+    <div class="iblock">
+      <div class="iblock-title req">現在のデータ（判別時）</div>
+      <div class="igrid">
+        <div class="igroup">
+          <label>総ゲーム数</label>
+          <input type="number" id="games" placeholder="例: 3000" min="0" oninput="calcMySample()">
+        </div>
+        <div class="igroup">
+          <label>BIG 合計回数</label>
+          <input type="number" id="big" placeholder="例: 15" min="0" oninput="calcMySample()">
+        </div>
+        <div class="igroup">
+          <label>REG 合計回数</label>
+          <input type="number" id="reg" placeholder="例: 18" min="0" oninput="calcMySample()">
+        </div>
+        <div class="igroup">
+          <label>ぶどう回数</label>
+          <input type="number" id="grape" placeholder="空欄=未入力" min="0" class="opt">
+          <div class="hint">ボーナス中除く通常時のみ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自回転数（打ち始めデータ入力時のみ表示） -->
+    <div class="iblock" id="my-sample-block" style="display:none">
+      <div class="iblock-title" style="color:#00ff88">▸ 自回転数データ（自動計算）</div>
+      <div class="igrid-3">
+        <div class="igroup">
+          <label>ゲーム数</label>
+          <input type="number" id="my-games" readonly class="my-input">
+        </div>
+        <div class="igroup">
+          <label>BIG</label>
+          <input type="number" id="my-big" readonly class="my-input">
+        </div>
+        <div class="igroup">
+          <label>REG</label>
+          <input type="number" id="my-reg" readonly class="my-input">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--color-dimmer);margin-top:5px">現在 − 打ち始め で自動計算</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ボーナス内訳 -->
+    <div class="iblock">
+      <div class="iblock-title opt">ボーナス内訳 <span class="badge-opt">入力で精度UP</span></div>
+      <div class="igrid">
+        <div class="igroup">
+          <label id="label-bigS">単独 BIG</label>
+          <input type="number" id="bigS" placeholder="空欄=未入力" min="0" class="opt">
+          <div class="hint" id="hint-bigS">チェリーが止まらずペカった BIG</div>
+        </div>
+        <div class="igroup">
+          <label>チェリー重複 BIG</label>
+          <input type="number" id="bigC" placeholder="空欄=未入力" min="0" class="opt">
+          <div class="hint">チェリーが止まりペカった BIG</div>
+        </div>
+        <div class="igroup">
+          <label>単独 REG</label>
+          <input type="number" id="regS" placeholder="空欄=未入力" min="0" class="opt">
+          <div class="hint">チェリーが止まらずペカった REG</div>
+        </div>
+        <div class="igroup">
+          <label>チェリー重複 REG</label>
+          <input type="number" id="regC" placeholder="空欄=未入力" min="0" class="opt">
+          <div class="hint">チェリーが止まりペカった REG</div>
+        </div>
+      </div>
+      <div class="caution-box">
+        <div class="caution-icon">⚠️</div>
+        <div class="caution-text">
+          チェリー重複を正確にカウントするには機種ごとの打ち方が必要です。<br><br>
+          <span class="caution-hi">【ボーナス優先制御】アイム・ゴーゴー・マイジャグ・ファンキー・ガールズ・ウルミラ</span><br>
+          フリー打ちや7狙いではボーナスが優先されチェリー重複か単独か判別できません。<span class="caution-hi">左リールBAR枠上〜上段狙いが必須です。</span><br><br>
+          <span class="caution-hi">【小役優先制御】ハッピーV3</span><br>
+          左リール7狙いでチェリーを引き込めます。<br><br>
+          <span class="caution-hi">【小役優先制御】ミスタージャグラー</span><br>
+          順押しなら左リールBAR狙い、中押し（中→右→左）ならより正確にフラグ判別可能です。
+        </div>
+      </div>
+    </div>
+
+    <div class="sticky-btn">
+      <button class="cbtn" onclick="analyze()">▶ 設定を解析する</button>
+    </div>
+    <p class="footnote">
+      ※ボーナス内訳・小役は入力しなくても解析できます。入れるほど精度が上がります！<br>
+      ※ぶどうはボーナス中を除いた通常時のみカウントしてください。
+    </p>
+
+  </div>
+
+  <!-- 解析結果 -->
+  <div class="section" id="result" style="display:none">
+    <div class="sec-title">▸ 解析結果</div>
+    <div class="srow" id="srow"></div>
+    <div id="my-result-block" style="display:none"></div>
+    <div class="conf-wrap">
+      <div class="conf-head">
+        <span class="conf-lbl">▸ 解析信頼度スコア</span>
+        <span class="conf-pct" id="confPct">—</span>
+      </div>
+      <div class="conf-bar"><div class="conf-fill" id="confFill"></div></div>
+      <div class="conf-note" id="confNote"></div>
+    </div>
+    <div class="bars" id="bars"></div>
+    <div class="bdwrap" id="bdwrap"></div>
+    <div class="verdict" id="verdict"></div>
+
+
+    <!-- AI相談 -->
+    <div style="margin-top:22px;border-top:1px solid var(--color-border);padding-top:18px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span style="font-family:Orbitron,sans-serif;font-size:11px;letter-spacing:.25em;color:var(--color-accent)">▸ AI スロプロ相談</span>
+        <span style="font-size:11px;color:var(--color-dimmer);padding:2px 8px;border:1px solid var(--color-border);border-radius:4px">解析データを自動読取</span>
+      </div>
+      <div id="ai-apikey-wrap" style="margin-bottom:12px;padding:12px 14px;background:rgba(0,200,100,.06);border:1px solid rgba(0,200,100,.2);border-radius:8px">
+        <div style="font-size:13px;color:#00e5a0;margin-bottom:8px">🔑 Gemini API キーを入力してください（無料）</div>
+        <input type="password" id="ai-apikey" placeholder="AIzaSy..." style="width:100%">
+        <div style="font-size:12px;color:var(--color-dimmer);margin-top:6px">
+          APIキーは <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--color-accent)">aistudio.google.com/apikey</a> で無料取得できます
+        </div>
+      </div>
+      <button id="ai-btn" class="cbtn" style="background:linear-gradient(135deg,#1a3a6a,#0a5a8a);box-shadow:0 4px 22px rgba(0,229,255,.3)" onclick="askAI()">
+        🤖 この台についてAIに相談する
+      </button>
+      <div id="ai-chat" style="display:none;margin-top:16px">
+        <div id="ai-messages" style="background:rgba(0,0,0,.3);border:1px solid var(--color-border);border-radius:10px;padding:16px;min-height:80px"></div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <input type="text" id="ai-input" placeholder="追加で質問する（例：撤退すべきですか？）"
+            style="flex:1" onkeydown="if(event.key==='Enter')followupAI()">
+          <button onclick="followupAI()" style="background:linear-gradient(135deg,#ff3d6e,#ff7a00);border:none;border-radius:8px;color:#fff;padding:10px 16px;cursor:pointer;font-size:14px;white-space:nowrap">送信</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="rbtn" onclick="resetAll()" style="margin-top:18px">← リセット</button>
+  </div>
+
+</div><!-- /page-analyzer -->
+
+<!-- ========== ぶどう逆算ページ ========== -->
+<div id="page-grape" style="display:none">
+
+  <!-- 機種選択 -->
+  <div class="section">
+    <div class="sec-title">▸ 機種選択 <span style="font-size:13px;color:var(--color-accent);font-weight:400">▼ タップして変更</span></div>
+    <select id="gp-machine-select" onchange="gpSelMDropdown(this.value)">
+      <option value="aime">アイムジャグラーEX-TP</option>
+      <option value="neo">ネオアイムジャグラーEX</option>
+      <option value="gogo3">ゴーゴージャグラー3</option>
+      <option value="my5">マイジャグラー5</option>
+      <option value="funky2">ファンキージャグラー2</option>
+      <option value="happyv3">ハッピージャグラーV3</option>
+      <option value="girlsss">ジャグラーガールズSS</option>
+      <option value="mr">ミスタージャグラー</option>
+      <option value="ultra">ウルトラミラクルジャグラー</option>
+    </select>
+  </div>
+
+  <!-- データ入力 -->
+  <div class="section">
+    <div class="sec-title">▸ データ入力</div>
+    <div class="igrid">
+      <div class="igroup">
+        <label>総ゲーム数</label>
+        <input type="number" id="gp-games" placeholder="例: 3000" min="0">
+      </div>
+      <div class="igroup">
+        <label>BIG回数</label>
+        <input type="number" id="gp-big" placeholder="例: 12" min="0">
+      </div>
+      <div class="igroup">
+        <label>REG回数</label>
+        <input type="number" id="gp-reg" placeholder="例: 15" min="0">
+      </div>
+      <div class="igroup">
+        <label>手元の玉数</label>
+        <input type="number" id="gp-diff" placeholder="例: +800 / -300">
+        <div class="hint">投入との差（マイナスも可）</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div style="font-size:13px;color:#ffd700;letter-spacing:.12em;margin-bottom:10px">▸ 打ち方選択</div>
+      <div id="gp-plays" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      <div style="font-size:12px;color:var(--color-dimmer);margin-top:8px;line-height:1.7">
+        ハッピーV3・ミスタージャグラーは打ち方によってぶどう逆算値が変わります。
+      </div>
+    </div>
+
+    <div class="sticky-btn">
+      <button class="cbtn" onclick="calcGrapeReverse()">▶ ぶどう確率を逆算する</button>
+    </div>
+    <p class="footnote">総ゲーム数・BIG・REG・差枚数からぶどう確率を逆算します</p>
+  </div>
+
+  <!-- 逆算結果 -->
+  <div class="section" id="gp-result" style="display:none">
+    <div class="sec-title">▸ ぶどう逆算結果</div>
+    <div style="font-size:12px;color:var(--color-dimmer);margin-bottom:16px">ぶどう確率のみによる設定推定確率</div>
+    <div id="gp-summary" style="margin-bottom:20px"></div>
+    <div style="font-size:12px;color:var(--color-dimmer);letter-spacing:.15em;margin-bottom:12px">各設定理論値との比較</div>
+    <div id="gp-rows"></div>
+    <button class="rbtn" style="margin-top:18px" onclick="resetGrapeReverse()">↺ リセット</button>
+  </div>
+
+</div><!-- /page-grape -->
+
+</div><!-- /wrap -->
+
+<script>
+// =====================================================
+// 機種データベース（設定1〜6）
+// big/reg      : ボーナス確率の分母
+// bigS/bigC    : 単独BIG / チェリー重複BIG 確率の分母
+// regS/regC    : 単独REG / チェリー重複REG 確率の分母
+// grape        : ぶどう確率の分母（通常時 1/N の N）
+// ev           : 期待差枚（枚/1000G ≈ 4000G時の収支ベース元）
+// =====================================================
+const DB = {
+  aime:{
+    name:'アイムジャグラーEX-TP',
+    big:  [273.07, 269.70, 269.70, 259.04, 259.04, 255.00],
+    reg:  [439.84, 399.61, 330.99, 315.08, 255.00, 255.00],
+    bigS: [389.2,  381.5,  381.5,  370.0,  370.0,  361.7],
+    bigC: [1456.36,1310.72,1092.27,1057.03,851.12, 851.12],
+    regS: [630.15, 574.88, 474.90, 448.88, 364.09, 364.09],
+    regC: [1456.36,1310.72,1092.27,1057.03,851.12, 851.12],
+    grape:[6.02,   6.02,   6.02,   6.02,   6.02,   5.78],
+    ev:   [-15,    -6,     +5,     +16,    +28,    +43],
+    bigPay:252, regPay:96, cherryPay:2,
+    cherry:[35.62, 35.62, 35.62, 35.62, 35.62, 35.62],
+    bell:1092.27, bellPay:14, piero:1092.27, pieroPay:10
+  },
+  neo:{
+    name:'ネオアイムジャグラーEX',
+    big:  [273.07, 269.70, 269.70, 259.04, 259.04, 255.00],
+    reg:  [439.84, 399.61, 330.99, 315.08, 255.00, 255.00],
+    bigS: [389.2,  381.5,  381.5,  370.0,  370.0,  361.7],
+    bigC: [1456.36,1310.72,1092.27,1057.03,851.12, 851.12],
+    regS: [630.15, 574.88, 474.90, 448.88, 364.09, 364.09],
+    regC: [1456.36,1310.72,1092.27,1057.03,851.12, 851.12],
+    grape:[6.02,   6.02,   6.02,   6.02,   6.02,   5.78],
+    ev:   [-15,    -6,     +5,     +16,    +28,    +43],
+    bigPay:240, regPay:96, cherryPay:2,
+    cherry:[35.62, 35.62, 35.62, 35.62, 35.62, 35.62],
+    bell:1092.27, bellPay:14, piero:1092.27, pieroPay:10
+  },
+  gogo3:{
+    name:'ゴーゴージャグラー3',
+    big:  [259.0,  258.0,  257.0,  254.0,  247.3,  234.9],
+    reg:  [354.2,  332.7,  306.2,  268.6,  247.3,  234.9],
+    bigS: [394.8,  392.4,  392.4,  387.8,  381.0,  364.1],
+    bigC: [1456.4, 1456.4, 1456.4, 1394.4, 1394.4, 1310.7],
+    regS: [489.1,  452.0,  436.9,  381.0,  339.6,  327.7],
+    regC: [1424.7, 1310.7, 1170.3, 1110.8, 1024.0, 936.2],
+    grape:[6.25,   6.20,   6.15,   6.07,   5.99,   5.92],
+    ev:   [-18,    -10,    -3,     +5,     +16,    +30],
+    bigPay:240, regPay:96, cherryPay:2,
+    cherry:[33.56, 33.47, 33.32, 33.15, 33.10, 32.97],
+    bell:1092.27, bellPay:14, piero:1092.27, pieroPay:10
+  },
+  my5:{
+    name:'マイジャグラー5',
+    big:  [273.1,  270.8,  266.4,  254.0,  240.1,  229.1],
+    reg:  [409.6,  385.5,  336.1,  290.0,  268.6,  229.1],
+    bigS: [420.1,  414.8,  404.5,  376.6,  348.6,  341.3],
+    bigC: [1365.0, 1365.0, 1365.0, 1365.0, 1337.0, 1130.0],
+    regS: [655.4,  595.8,  496.5,  404.5,  390.1,  327.7],
+    regC: [1092.0, 1092.0, 1040.0, 1024.0, 862.0,  762.0],
+    grape:[5.90,   5.85,   5.80,   5.78,   5.76,   5.66],
+    ev:   [-12,    -5,     +2,     +14,    +24,    +37],
+    bigPay:240, regPay:96, cherryPay:2,
+    cherry:[38.1,  38.1,  36.8,  35.6,  35.6,  35.6],
+    bell:1092.27, bellPay:14, piero:1092.27, pieroPay:10
+  },
+  funky2:{
+    name:'ファンキージャグラー2',
+    big:  [266.41, 259.04, 256.00, 249.19, 240.06, 219.92],
+    reg:  [439.84, 407.06, 366.12, 322.84, 299.25, 262.14],
+    bigS: [402.06, 397.19, 397.19, 385.51, 378.82, 339.56],
+    bigC: [1456.36,1365.33,1337.47,1337.47,1260.31,1191.56],
+    regS: [636.27, 574.88, 512.00, 448.88, 409.60, 356.17],
+    regC: [1424.70,1394.38,1285.02,1149.75,1110.78,992.97],
+    grape:[5.94,   5.92,   5.88,   5.83,   5.76,   5.67],
+    ev:   [-14,    -6,     +3,     +15,    +26,    +38],
+    bigPay:240, regPay:96, cherryPay:2,
+    cherry:[35.62, 35.62, 35.62, 35.62, 35.62, 35.62],
+    bell:1092.27, bellPay:14, piero:1092.27, pieroPay:10
+  },
+  happyv3:{
+    name:'ハッピージャグラーV3',
+    big:  [273.1,  270.8,  263.2,  254.0,  239.2,  226.0],
+    reg:  [397.2,  362.1,  332.7,  300.6,  273.1,  256.0],
+    bigS: [358.1,  354.2,  348.6,  341.3,  319.7,  297.9],
+    bigC: [1149.8, 1149.8, 1074.4, 993.0,  949.8,  936.2],
+    regS: [682.7,  612.5,  574.9,  496.5,  455.1,  439.8],
+    regC: [949.8,  885.6,  789.6,  762.0,  682.7,  612.5],
+    grape:[6.04,   6.01,   5.98,   5.86,   5.84,   5.82],
+    ev:   [-15,    -6,     +4,     +17,    +30,    +45],
+    bigPay:240, regPay:96, cherryPay:2,
+    // ★ハッピーV3：チェリー全設定共通1/56.545、ベル・ピエロ1/655.36（他機種と異なる）
+    cherry:[56.545,56.545,56.545,56.545,56.545,56.545],
+    bell:655.36, bellPay:14, piero:655.36, pieroPay:10
+  },
+  girlsss:{
+    name:'ジャグラーガールズSS',
+    // ★単独・チェリー重複は独自算出の推定値
+    big:  [273.07, 270.81, 260.06, 250.14, 243.63, 225.99],
+    reg:  [381.02, 350.46, 316.60, 281.27, 270.81, 252.06],
+    bigS: [390.1,  383.3,  372.4,  352.3,  339.6,  313.6],
+    bigC: [910.2,  923.0,  862.3,  862.3,  862.3,  809.1],
+    regS: [520.1,  485.5,  439.8,  397.2,  385.5,  358.1],
+    regC: [1424.7, 1260.3, 1129.9, 963.8,  910.2,  851.1],
+    grape:[5.98,   5.98,   5.98,   5.98,   5.88,   5.83],  // ガリぞう確定値
+    ev:   [-12,    -5,     +3,     +15,    +25,    +42],
+    bigPay:240, regPay:96, cherryPay:2,
+    cherry:[33.56, 33.47, 33.32, 33.15, 33.10, 32.97],
+    bell:1092.27, bellPay:14, piero:1092.27, pieroPay:10
+  },
+  mr:{
+    name:'ミスタージャグラー',
+    // ★ぶどうはガリぞう約6万G実測値（確定）
+    // ★チェリー払い出し4枚（他機種は2枚）
+    // ★単独・チェリー重複は独自算出の推定値
+    big:  [268.59, 267.49, 260.06, 249.19, 240.94, 237.45],
+    reg:  [374.49, 354.25, 330.99, 291.27, 257.00, 237.45],
+    bigS: [354,    353,    342,    330,    320,    314],
+    bigC: [1689,   1682,   1655,   1508,   1410,   1385],
+    regS: [517,    481,    447,    384,    329,    299],
+    regC: [1621,   1600,   1503,   1412,   1357,   1331],
+    grape:[6.29,   6.22,   6.15,   6.09,   6.02,   5.96],
+    ev:   [-14,    -6,     +4,     +20,    +35,    +46],
+    bigPay:240, regPay:96, cherryPay:4,  // ★チェリー4枚
+    // ★チェリー全設定共通1/37.24、ピエロ1/420.1（他機種と異なる）
+    cherry:[37.24, 37.24, 37.24, 37.24, 37.24, 37.24],
+    bell:655.4, bellPay:14, piero:420.1, pieroPay:10
+  },
+  ultra:{
+    name:'ウルトラミラクルジャグラー',
+    // ★ぶどうはガリぞう独自調査値（なな徹 2024年12月）
+    // ★単独・チェリー重複は独自算出の推定値
+    big:  [267.49, 261.10, 256.00, 242.73, 233.22, 216.29],
+    reg:  [425.56, 402.06, 350.46, 322.84, 297.89, 277.69],
+    bigS: [334.4,  332.7,  329.3,  310.6,  304.8,  281.3],
+    bigC: [1349.0, 1205.0, 1157.0, 1110.0, 998.0,  931.0],
+    regS: [595.8,  546.1,  489.1,  436.9,  414.8,  378.8],
+    regC: [1490.0, 1528.0, 1234.0, 1240.0, 1050.0, 1032.0],
+    grape:[5.93,   5.93,   5.93,   5.93,   5.87,   5.81],
+    ev:   [-15,    -6,     +4,     +15,    +28,    +44],
+    bigPay:240, regPay:96, cherryPay:2,
+    cherry:[35.54, 35.54, 34.86, 34.79, 34.13, 33.44],
+    bell:1024.0, bellPay:14, piero:1024.0, pieroPay:10
+  }
+};
+
+// 推定値注記が必要な機種
+const ESTIMATED = {
+  girlsss: '⚠️ 単独・チェリー重複は独自算出の推定値です（確定解析値は未公開）。ぶどう・ボーナス確率を重視した判別を推奨します。',
+  mr:      '⚠️ 単独・チェリー重複は独自算出の推定値です。ぶどう確率・チェリー払い出しはガリぞう確定値。チェリー払い出しが4枚（他機種は2枚）の点に注意。',
+  ultra:   '⚠️ 単独・チェリー重複は独自算出の推定値です。ぶどう確率の設定差が極小（1/5.81〜5.93）のため判別精度が低くなります。',
+  happyv3: 'ℹ️ チェリー確率が全設定共通（1/56.5）。ベル・ピエロ確率が他機種より軽い（1/655.36）ためぶどう逆算は打ち方の影響を受けます。',
+};
+
+// ぶどう逆算用：機種別定数
+// bigPay/regPay/cherryPay/bellPay/pieroPay: 各役の払い出し枚数
+// cherry[6]: チェリー確率の分母（設定別）
+// bell/piero: ベル・ピエロ確率の分母（設定間差なしの機種は単一値）
+// replay: リプレイ確率の分母（法律上最低値1/7.298 ≈ 全機種共通）
+// plays: 打ち方選択肢 { id, label, cherryTake, bellTake, pieroTake }
+const GP_SPEC = {
+  aime:   {
+    bigPay:252, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[35.62,35.62,35.62,35.62,35.62,35.62],
+    bell:1092.27, piero:1092.27,
+    actualPlay:{cherryTake:1.0, bellTake:0, pieroTake:0},
+    plays:[
+      {id:'free',   label:'フリー打ち',   cherryTake:0.667, bellTake:0, pieroTake:0},
+      {id:'cherry', label:'チェリー狙い', cherryTake:1.0,   bellTake:0, pieroTake:0},
+    ]
+  },
+  neo:    {
+    bigPay:240, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[35.62,35.62,35.62,35.62,35.62,35.62],
+    bell:1092.27, piero:1092.27,
+    actualPlay:{cherryTake:1.0, bellTake:0, pieroTake:0},
+    plays:[
+      {id:'free',   label:'フリー打ち',   cherryTake:0.667, bellTake:0, pieroTake:0},
+      {id:'cherry', label:'チェリー狙い', cherryTake:1.0,   bellTake:0, pieroTake:0},
+    ]
+  },
+  gogo3:  {
+    bigPay:240, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[33.56,33.47,33.32,33.15,33.10,32.97],
+    bell:1092.27, piero:1092.27,
+    actualPlay:{cherryTake:1.0, bellTake:0, pieroTake:0},
+    plays:[
+      {id:'free',   label:'フリー打ち',   cherryTake:0.667, bellTake:0, pieroTake:0},
+      {id:'cherry', label:'チェリー狙い', cherryTake:1.0,   bellTake:0, pieroTake:0},
+    ]
+  },
+  my5:    {
+    bigPay:240, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[38.1,38.1,36.8,35.6,35.6,35.6],
+    bell:1092.27, piero:1092.27,
+    actualPlay:{cherryTake:1.0, bellTake:0, pieroTake:0},
+    plays:[
+      {id:'free',   label:'フリー打ち',   cherryTake:0.667, bellTake:0, pieroTake:0},
+      {id:'cherry', label:'チェリー狙い', cherryTake:1.0,   bellTake:0, pieroTake:0},
+    ]
+  },
+  funky2: {
+    bigPay:240, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[35.62,35.62,35.62,35.62,35.62,35.62],
+    bell:1092.27, piero:1092.27,
+    actualPlay:{cherryTake:1.0, bellTake:0, pieroTake:0},
+    plays:[
+      {id:'free',   label:'フリー打ち',   cherryTake:0.667, bellTake:0, pieroTake:0},
+      {id:'cherry', label:'チェリー狙い', cherryTake:1.0,   bellTake:0, pieroTake:0},
+    ]
+  },
+  happyv3:{
+    bigPay:240, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[56.545,56.545,56.545,56.545,56.545,56.545],
+    bell:655.36, piero:655.36,
+    // 実践値：順はさみ7狙い チェリー100% ベル80% ピエロ0%
+    actualPlay:{cherryTake:1.0, bellTake:0.8, pieroTake:0.0},
+    plays:[
+      {id:'free',   label:'フリー打ち',          cherryTake:0.667, bellTake:0.25,  pieroTake:0.10},
+      {id:'cherry', label:'チェリー狙い（ベル捨て）', cherryTake:1.0,   bellTake:0,     pieroTake:0},
+      {id:'mid',    label:'チェリー＋ベル狙い',    cherryTake:1.0,   bellTake:0.667, pieroTake:0},
+      {id:'full',   label:'フル攻略',             cherryTake:1.0,   bellTake:1.0,   pieroTake:1.0},
+    ]
+  },
+  girlsss:{
+    bigPay:240, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[33.56,33.47,33.32,33.15,33.10,32.97],
+    bell:1092.27, piero:1092.27,
+    actualPlay:{cherryTake:1.0, bellTake:0, pieroTake:0},
+    plays:[
+      {id:'free',   label:'フリー打ち',   cherryTake:0.667, bellTake:0, pieroTake:0},
+      {id:'cherry', label:'チェリー狙い', cherryTake:1.0,   bellTake:0, pieroTake:0},
+    ]
+  },
+  mr:{
+    bigPay:240, regPay:96, cherryPay:4, bellPay:14, pieroPay:10, replay:7.298,  // ★チェリー4枚
+    cherry:[37.24,37.24,37.24,37.24,37.24,37.24],
+    bell:655.4, piero:420.1,  // ★ピエロ1/420.1（他機種と異なる）
+    // 実践値：中押し手順 チェリー95% ベル63% ピエロ63%
+    actualPlay:{cherryTake:0.95, bellTake:0.63, pieroTake:0.63},
+    plays:[
+      {id:'free',   label:'フリー打ち',            cherryTake:0.667, bellTake:0.111, pieroTake:0.402},
+      {id:'cherry', label:'チェリー狙い',          cherryTake:1.0,   bellTake:0,     pieroTake:0.302},
+      {id:'mid',    label:'中級（中押し）',         cherryTake:1.0,   bellTake:0.667, pieroTake:0.667},
+      {id:'full',   label:'フル攻略（中押し完全）', cherryTake:1.0,   bellTake:1.0,   pieroTake:1.0},
+    ]
+  },
+  ultra:  {
+    bigPay:240, regPay:96, cherryPay:2, bellPay:14, pieroPay:10, replay:7.298,
+    cherry:[35.54,35.54,34.86,34.79,34.13,33.44],
+    bell:1024.0, piero:1024.0,
+    actualPlay:{cherryTake:1.0, bellTake:0, pieroTake:0},
+    plays:[
+      {id:'free',   label:'フリー打ち',   cherryTake:0.667, bellTake:0, pieroTake:0},
+      {id:'cherry', label:'チェリー狙い', cherryTake:1.0,   bellTake:0, pieroTake:0},
+    ]
+  },
+};
+
+// =====================================================
+// 状態変数
+// =====================================================
+let curMachine = 'aime';
+let gpMachine  = 'aime';
+let gpPlay     = 'free';
+let aiHistory  = [];
+
+// =====================================================
+// ページ切替
+// =====================================================
+function switchPage(page, el){
+  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-analyzer').style.display = page === 'analyzer' ? 'block' : 'none';
+  document.getElementById('page-grape').style.display    = page === 'grape'    ? 'block' : 'none';
+}
+
+// =====================================================
+// 機種選択（設定判別）
+// =====================================================
+function selMDropdown(key){
+  curMachine = key;
+  const n = document.getElementById('estimated-note');
+  if(ESTIMATED[key]){
+    n.textContent = ESTIMATED[key];
+    n.style.display = 'block';
+  } else {
+    n.style.display = 'none';
+  }
+  const l = document.getElementById('label-bigS');
+  const h = document.getElementById('hint-bigS');
+  if(key === 'mr'){
+    l.textContent = '単独BIG（1枚役含む）';
+    h.textContent = 'チェリーなしペカ（1枚役BIG混在）';
+  } else {
+    l.textContent = '単独 BIG';
+    h.textContent = 'チェリーが止まらずペカった BIG';
+  }
+}
+
+// =====================================================
+// 機種選択（ぶどう逆算）
+// =====================================================
+function gpSelMDropdown(key){
+  gpMachine = key;
+  gpPlay = GP_SPEC[key].plays[0].id;
+  buildGpPlayButtons(key);
+}
+function gpSelPlay(el, key){
+  document.querySelectorAll('.gp-ptab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  gpPlay = key;
+}
+function buildGpPlayButtons(key){
+  const div = document.getElementById('gp-plays');
+  div.innerHTML = GP_SPEC[key].plays.map((p, i) =>
+    `<button class="mtab gp-ptab ${i===0?'active':''}" onclick="gpSelPlay(this,'${p.id}')">${p.label}</button>`
+  ).join('');
+}
+
+// 初期化
+buildGpPlayButtons('aime');
+
+// =====================================================
+// 前任者データ解析：設定別推定差枚
+// =====================================================
+function analyzeStart(){
+  const sg = parseInt(document.getElementById('start-games').value) || 0;
+  const sb = parseInt(document.getElementById('start-big').value)   || 0;
+  const sr = parseInt(document.getElementById('start-reg').value)   || 0;
+  const sd = document.getElementById('start-diff').value;
+  const actualDiff = sd !== '' ? parseInt(sd) : null;
+
+  if(sg < 100){ alert('ゲーム数を入力してください（最低100G以上）'); return; }
+  if(sb + sr === 0){ alert('BIG・REG回数を入力してください'); return; }
+
+  const m  = DB[curMachine];
+  const sp = GP_SPEC[curMachine];
+  const ap = sp.actualPlay;  // 実践的な小役回収率
+
+  // リプレイ控除後の実質投入
+  const invest = sg * 3 * (1 - 1 / sp.replay);
+
+  // 設定別推定差枚を計算
+  const results = [];
+  for(let s = 0; s < 6; s++){
+    // 小役理論値（現在の総回転数から設定Xの理論確率で算出）
+    const expGrape  = sg / m.grape[s];
+    const expCherry = sg / m.cherry[s];
+    const expBell   = sg / sp.bell;
+    const expPiero  = sg / sp.piero;
+
+    // 差枚 = ボーナス実績 + 小役理論値 × 払出 × 回収率 - 実質投入
+    const diff = Math.round(
+      sb * m.bigPay +
+      sr * m.regPay +
+      expGrape  * 8 +
+      expCherry * sp.cherryPay * ap.cherryTake +
+      expBell   * sp.bellPay   * ap.bellTake   +
+      expPiero  * sp.pieroPay  * ap.pieroTake  -
+      invest
+    );
+
+    // ぶどう理論値のガウス尤度 × REGのポアソン尤度
+    const grapeTheory = 1 / m.grape[s];
+    const grapeObs    = 1 / (sg / m.grape[s]);  // 理論値そのまま（前任者ぶどう不明）
+    const sigmaGrape  = Math.sqrt(grapeTheory * (1-grapeTheory) / sg);
+    let likelihood = 1.0;  // ぶどう実測なしは均等
+
+    // REGのポアソン尤度（設定差が大きいので重要指標）
+    if(sr > 0){
+      const expReg = sg / m.reg[s];
+      const expRef = sg / m.reg[0];
+      const regLLR = sr * Math.log(expReg / expRef) - (expReg - expRef);
+      likelihood *= Math.exp(regLLR * 1.5);
+    }
+    // BIGのポアソン尤度（補助）
+    if(sb > 0){
+      const expBig = sg / m.big[s];
+      const expRef = sg / m.big[0];
+      const bigLLR = sb * Math.log(expBig / expRef) - (expBig - expRef);
+      likelihood *= Math.exp(bigLLR * 0.8);
+    }
+
+    results.push({
+      setting: s + 1,
+      diff,
+      likelihood,
+      expGrape:  expGrape.toFixed(1),
+      expCherry: expCherry.toFixed(1),
+    });
+  }
+
+  // 設定確率（softmax）
+  const maxL   = Math.max(...results.map(r => r.likelihood));
+  const expL   = results.map(r => Math.exp(Math.log(Math.max(r.likelihood,1e-300)) - Math.log(maxL)));
+  const sumL   = expL.reduce((a,b) => a+b, 0);
+  const probs  = expL.map(e => (e/sumL)*100);
+  const topIdx = probs.indexOf(Math.max(...probs));
+
+  // 差枚入力がある場合：最も近い設定を特定
+  let closestIdx = actualDiff !== null ? 0 : -1;
+  if(actualDiff !== null){
+    let minD = Infinity;
+    results.forEach((r, i) => {
+      const d = Math.abs(r.diff - actualDiff);
+      if(d < minD){ minD = d; closestIdx = i; }
+    });
+  }
+
+  // ===== 表示 =====
+  const bigProb = sb ? (sg/sb).toFixed(1) : '—';
+  const regProb = sr ? (sg/sr).toFixed(1) : '—';
+  const allProb = (sb+sr) ? (sg/(sb+sr)).toFixed(1) : '—';
+
+  let html = '';
+
+  // 基本スタッツ
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px">
+    <div class="scard"><div class="slabel">BIG確率</div><div class="sval" style="font-size:14px">1/${bigProb}</div><div class="snote">${sb}回</div></div>
+    <div class="scard"><div class="slabel">REG確率</div><div class="sval" style="font-size:14px">1/${regProb}</div><div class="snote">${sr}回</div></div>
+    <div class="scard"><div class="slabel">合算確率</div><div class="sval" style="font-size:14px">1/${allProb}</div><div class="snote">${sb+sr}回</div></div>
+  </div>`;
+
+  // 小役理論値（設定1〜6全表示）
+  html += `<div style="padding:10px 12px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:10px;margin-bottom:14px">
+    <div style="color:var(--color-accent);font-size:11px;letter-spacing:.15em;margin-bottom:8px">▸ 小役理論値（${sg}G基準）</div>
+    <div style="display:grid;grid-template-columns:52px repeat(6,1fr);gap:3px;font-size:12px;text-align:center">
+      <div></div>${[1,2,3,4,5,6].map(s=>'<div style="color:var(--color-dim)">設'+s+'</div>').join('')}
+      <div style="text-align:left;color:var(--color-muted)">ぶどう</div>${results.map(r=>'<div>'+r.expGrape+'</div>').join('')}
+      <div style="text-align:left;color:var(--color-muted)">チェリー</div>${results.map(r=>'<div>'+r.expCherry+'</div>').join('')}
+    </div>
+  </div>`;
+
+  // 差枚入力がある場合の実際の差枚表示
+  if(actualDiff !== null){
+    const sign = actualDiff >= 0 ? '+' : '';
+    const col  = actualDiff >= 0 ? '#00ff88' : '#ff3d6e';
+    html += `<div style="padding:10px 12px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.25);border-radius:10px;margin-bottom:14px;font-size:14px">
+      実際の差枚: <span style="color:${col};font-weight:700;font-size:18px">${sign}${actualDiff.toLocaleString()}枚</span>
+      <span style="font-size:11px;color:var(--color-dimmer);margin-left:6px">→ 設定${closestIdx+1}の理論値に最も近い</span>
+    </div>`;
+  }
+
+  // 設定別確率バー＋推定差枚
+  const COLS = [
+    'linear-gradient(90deg,#3a3a55,#5a5a77)',
+    'linear-gradient(90deg,#1a3060,#3a5090)',
+    'linear-gradient(90deg,#1a4a2a,#3a7a4a)',
+    'linear-gradient(90deg,#504010,#907020)',
+    'linear-gradient(90deg,#602010,#a04020)',
+    'linear-gradient(90deg,#ff3d6e,#ff8c00)',
+  ];
+  html += `<div style="font-size:12px;color:var(--color-dim);letter-spacing:.12em;margin-bottom:10px">▸ 設定別 推定確率（BIG・REG実績ベース）</div>`;
+  html += `<div style="display:flex;flex-direction:column;gap:10px">`;
+  results.forEach((r, i) => {
+    const isTop  = i === topIdx;
+    const sign   = r.diff >= 0 ? '+' : '';
+    const col    = r.diff >= 0 ? '#00ff88' : '#ff3d6e';
+    html += `<div style="display:flex;align-items:center;gap:10px;${isTop?'background:rgba(255,61,110,.06);border:1px solid rgba(255,61,110,.3);border-radius:8px;padding:4px 8px':''}">
+      <div style="font-family:Orbitron,sans-serif;font-size:11px;width:48px;flex-shrink:0;color:${isTop?'var(--color-pink)':'var(--color-dim)'}">設定<b style="font-size:17px">${r.setting}</b>${isTop?' ◀':''}</div>
+      <div style="flex:1;height:28px;background:rgba(255,255,255,.04);border-radius:7px;overflow:hidden;border:1px solid var(--color-border)">
+        <div style="height:100%;border-radius:7px;width:${Math.max(probs[i],1.5)}%;background:${COLS[i]};transition:width .8s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;justify-content:flex-end;padding-right:8px">
+          <span style="font-family:Orbitron,sans-serif;font-size:11px;font-weight:700;color:rgba(0,0,0,.85);white-space:nowrap">${probs[i].toFixed(1)}%</span>
+        </div>
+      </div>
+      <div style="font-size:12px;color:${col};min-width:60px;text-align:right">${sign}${r.diff.toLocaleString()}枚</div>
+    </div>`;
+  });
+  html += `</div>`;
+  html += `<div style="font-size:11px;color:var(--color-dimmer);margin-top:10px;line-height:1.8">
+    ※確率はBIG・REG実績から計算　※差枚はボーナス実績＋小役理論値
+  </div>`;
+
+  const resultEl = document.getElementById('start-result');
+  document.getElementById('start-result-inner').innerHTML = html;
+  resultEl.style.display = 'block';
+  resultEl.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// =====================================================
+// 自回転数の自動計算
+// =====================================================
+function calcMySample(){
+  const sg = parseInt(document.getElementById('start-games').value) || 0;
+  const sb = parseInt(document.getElementById('start-big').value)   || 0;
+  const sr = parseInt(document.getElementById('start-reg').value)   || 0;
+  const ng = parseInt(document.getElementById('games').value)       || 0;
+  const nb = parseInt(document.getElementById('big').value)         || 0;
+  const nr = parseInt(document.getElementById('reg').value)         || 0;
+
+  const block = document.getElementById('my-sample-block');
+  if(sg > 0 || sb > 0 || sr > 0){
+    block.style.display = 'block';
+    document.getElementById('my-games').value = Math.max(0, ng - sg);
+    document.getElementById('my-big').value   = Math.max(0, nb - sb);
+    document.getElementById('my-reg').value   = Math.max(0, nr - sr);
+  } else {
+    block.style.display = 'none';
+  }
+}
+
+// =====================================================
+// 対数尤度比（LLR）計算
+// =====================================================
+function llrPoisson(obs, lambdaS, lambdaRef){
+  if(lambdaS <= 0 || lambdaRef <= 0) return 0;
+  return obs * Math.log(lambdaS / lambdaRef) - (lambdaS - lambdaRef);
+}
+function llrBinomial(k, n, pS, pRef){
+  if(n <= 0 || pS <= 0 || pRef <= 0 || pS >= 1 || pRef >= 1) return 0;
+  const ps = Math.max(1e-10, Math.min(1-1e-10, pS));
+  const pr = Math.max(1e-10, Math.min(1-1e-10, pRef));
+  return k * Math.log(ps/pr) + (n-k) * Math.log((1-ps)/(1-pr));
+}
+
+// =====================================================
+// 設定判別
+// =====================================================
+function analyze(){
+  const games = parseInt(document.getElementById('games').value) || 0;
+  const big   = parseInt(document.getElementById('big').value)   || 0;
+  const reg   = parseInt(document.getElementById('reg').value)   || 0;
+
+  const sg = parseInt(document.getElementById('start-games').value) || 0;
+  const sb = parseInt(document.getElementById('start-big').value)   || 0;
+  const sr = parseInt(document.getElementById('start-reg').value)   || 0;
+  const myGames = sg > 0 ? Math.max(0, games - sg) : games;
+  const myBig   = sg > 0 ? Math.max(0, big - sb)   : big;
+  const myReg   = sg > 0 ? Math.max(0, reg - sr)   : reg;
+
+  function optVal(id){ const v = document.getElementById(id).value; return v === '' ? null : parseInt(v); }
+  const bigS  = optVal('bigS');
+  const bigC  = optVal('bigC');
+  const regS  = optVal('regS');
+  const regC  = optVal('regC');
+  const grape = optVal('grape');
+
+  if(games < 100){ alert('ゲーム数を入力してください（最低100G以上）'); return; }
+  if(big + reg === 0){ alert('BIG・REG回数を入力してください'); return; }
+  if(bigS !== null && bigC !== null && bigS + bigC > big + 1){
+    alert(`単独BIG(${bigS})+チェリーBIG(${bigC})がBIG合計(${big})を超えています`); return;
+  }
+  if(regS !== null && regC !== null && regS + regC > reg + 1){
+    alert(`単独REG(${regS})+チェリーREG(${regC})がREG合計(${reg})を超えています`); return;
+  }
+
+  const m = DB[curMachine];
+
+  // 重み付け（設定差の大きさに比例）
+  const W = { big:1.0, reg:1.5, bigS:1.5, bigC:1.5, regS:2.5, regC:2.5, grape:3.0 };
+
+  // 設定1を基準とした期待値
+  const ref = {
+    big:   games   / m.big[0],
+    reg:   games   / m.reg[0],
+    bigS:  big > 0 ? m.big[0] / m.bigS[0] : 0,
+    bigC:  big > 0 ? m.big[0] / m.bigC[0] : 0,
+    regS:  reg > 0 ? m.reg[0] / m.regS[0] : 0,
+    regC:  reg > 0 ? m.reg[0] / m.regC[0] : 0,
+    grape: myGames / m.grape[0],
+  };
+
+  const scores = [];
+  const fdata  = [];
+
+  for(let s = 0; s < 6; s++){
+    let score = 0;
+    const fd  = {};
+
+    // BIG合算
+    const eBig = games / m.big[s];
+    score += llrPoisson(big, eBig, ref.big) * W.big;
+    fd.big = {label:'BIG合算', obs:big, exp:eBig};
+
+    // REG合算
+    const eReg = games / m.reg[s];
+    score += llrPoisson(reg, eReg, ref.reg) * W.reg;
+    fd.reg = {label:'REG合算', obs:reg, exp:eReg};
+
+    if(bigS !== null && big > 0){
+      const p = m.big[s] / m.bigS[s];
+      score += llrBinomial(bigS, big, p, ref.bigS) * W.bigS;
+      fd.bigS = {label:'単独BIG', obs:bigS, exp:big*p};
+    }
+    if(bigC !== null && big > 0){
+      const p = m.big[s] / m.bigC[s];
+      score += llrBinomial(bigC, big, p, ref.bigC) * W.bigC;
+      fd.bigC = {label:'チェリーBIG', obs:bigC, exp:big*p};
+    }
+    if(regS !== null && reg > 0){
+      const p = m.reg[s] / m.regS[s];
+      score += llrBinomial(regS, reg, p, ref.regS) * W.regS;
+      fd.regS = {label:'単独REG', obs:regS, exp:reg*p};
+    }
+    if(regC !== null && reg > 0){
+      const p = m.reg[s] / m.regC[s];
+      score += llrBinomial(regC, reg, p, ref.regC) * W.regC;
+      fd.regC = {label:'チェリーREG', obs:regC, exp:reg*p};
+    }
+    if(grape !== null){
+      const eGrape = myGames / m.grape[s];
+      score += llrPoisson(grape, eGrape, ref.grape) * W.grape;
+      fd.grape = {label:'ぶどう', obs:grape, exp:eGrape};
+    }
+
+    scores.push(score);
+    fdata.push(fd);
+  }
+
+  // softmax → 事後確率
+  const maxS  = Math.max(...scores);
+  const exps  = scores.map(s => Math.exp(s - maxS));
+  const sumE  = exps.reduce((a,b) => a+b, 0);
+  const probs = exps.map(e => (e/sumE) * 100);
+
+  // 信頼度スコア
+  let dScore = 2;
+  if(bigS  !== null) dScore += 1.5;
+  if(bigC  !== null) dScore += 1.5;
+  if(regS  !== null) dScore += 2;
+  if(regC  !== null) dScore += 2;
+  if(grape !== null) dScore += 2;
+  const sampleScore = Math.min(1, (big+reg)/40);
+  const conf = Math.round((dScore/11.0 * 0.55 + sampleScore * 0.45) * 100);
+
+  // ===== 表示 =====
+  const resultEl = document.getElementById('result');
+  resultEl.style.display = 'block';
+  resultEl.classList.remove('anim');
+  void resultEl.offsetWidth;
+  resultEl.classList.add('anim');
+
+  // スタッツカード
+  const bigProb = big   ? (games/big).toFixed(1)   : '—';
+  const regProb = reg   ? (games/reg).toFixed(1)   : '—';
+  const allProb = (big+reg) ? (games/(big+reg)).toFixed(1) : '—';
+
+  let sHTML = `
+    <div class="scard">
+      <div class="slabel">BIG確率</div>
+      <div class="sval" style="font-size:14px">1/${bigProb}</div>
+      <div class="snote">${big}回</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">REG確率</div>
+      <div class="sval" style="font-size:14px">1/${regProb}</div>
+      <div class="snote">${reg}回</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">合算確率</div>
+      <div class="sval" style="font-size:14px">1/${allProb}</div>
+      <div class="snote">${big+reg}回</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">ゲーム数</div>
+      <div class="sval" style="font-size:13px">${games.toLocaleString()}G</div>
+    </div>`;
+
+  // ぶどうカード（入力あり時のみ）
+  if(grape !== null && grape > 0){
+    const grapeProb  = (myGames / grape).toFixed(2);
+    const grapeColor = parseFloat(grapeProb) <= m.grape[5] ? '#00ff88'
+                     : parseFloat(grapeProb) <= m.grape[2] ? '#ffd700' : '#7a7a9a';
+    // 設定別ぶどう理論値を生成（連続する同値はまとめる）
+    const grapeRows = [];
+    let si = 0;
+    while(si < 6){
+      let sj = si;
+      while(sj < 5 && m.grape[sj+1] === m.grape[si]) sj++;
+      const label = si === sj ? `設定${si+1}` : `設定${si+1}-${sj+1}`;
+      grapeRows.push(`${label}: 1/${m.grape[si].toFixed(2)}`);
+      si = sj + 1;
+    }
+    sHTML += `
+      <div class="scard" style="grid-column:1/-1">
+        <div class="slabel">ぶどう確率${sg > 0 ? '（自回転）' : ''}</div>
+        <div class="sval" style="font-size:14px;color:${grapeColor}">1/${grapeProb}</div>
+        <div class="snote">${myGames.toLocaleString()}G中 ${grape}回<br>${grapeRows.join(' ／ ')}</div>
+      </div>`;
+  }
+  document.getElementById('srow').innerHTML = sHTML;
+
+  // 自回転数データ（打ち始めあり時）
+  const myBlock = document.getElementById('my-result-block');
+  if(sg > 0){
+    const myBigProb = myBig > 0 ? (myGames/myBig).toFixed(1) : '—';
+    const myRegProb = myReg > 0 ? (myGames/myReg).toFixed(1) : '—';
+    const myAllProb = (myBig+myReg) > 0 ? (myGames/(myBig+myReg)).toFixed(1) : '—';
+    myBlock.style.display = 'block';
+    myBlock.innerHTML = `
+      <div style="margin-top:10px;padding:12px;background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.2);border-radius:10px">
+        <div style="font-size:13px;color:#00ff88;margin-bottom:8px">▸ 自回転数データ（${myGames}G / BIG${myBig}回 / REG${myReg}回）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div class="scard"><div class="slabel">BIG確率</div><div class="sval" style="font-size:13px;color:#00ff88">1/${myBigProb}</div><div class="snote">${myBig}回</div></div>
+          <div class="scard"><div class="slabel">REG確率</div><div class="sval" style="font-size:13px;color:#00ff88">1/${myRegProb}</div><div class="snote">${myReg}回</div></div>
+          <div class="scard"><div class="slabel">合算確率</div><div class="sval" style="font-size:13px;color:#00ff88">1/${myAllProb}</div><div class="snote">${myBig+myReg}回</div></div>
+        </div>
+      </div>`;
+  } else {
+    myBlock.style.display = 'none';
+  }
+
+  // 信頼度バー
+  const cc = conf >= 70 ? '#00ff88' : conf >= 40 ? '#ffd700' : '#ff3d6e';
+  document.getElementById('confPct').textContent = conf + '%';
+  document.getElementById('confPct').style.color = cc;
+  document.getElementById('confNote').textContent =
+    conf >= 80 ? '判別精度：高（十分なデータが揃っています）' :
+    conf >= 55 ? '判別精度：中（ボーナス内訳・ぶどうを追加入力すると向上します）' :
+                 '判別精度：低（ぶどう回数・ボーナス内訳の入力を推奨します）';
+  setTimeout(() => { document.getElementById('confFill').style.width = conf + '%'; }, 80);
+
+  // 設定バー
+  const COLS = [
+    'linear-gradient(90deg,#3a3a55,#5a5a77)',
+    'linear-gradient(90deg,#1a3060,#3a5090)',
+    'linear-gradient(90deg,#1a4a2a,#3a7a4a)',
+    'linear-gradient(90deg,#504010,#907020)',
+    'linear-gradient(90deg,#602010,#a04020)',
+    'linear-gradient(90deg,#ff3d6e,#ff8c00)',
+  ];
+  let bHTML = '';
+  for(let s = 0; s < 6; s++){
+    bHTML += `<div class="brow">
+      <div class="blabel">設定<b>${s+1}</b></div>
+      <div class="btrack">
+        <div class="bfill" id="b${s}" style="background:${COLS[s]}">
+          <span class="bpct">${probs[s].toFixed(1)}%</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('bars').innerHTML = bHTML;
+  setTimeout(() => {
+    for(let s = 0; s < 6; s++){
+      document.getElementById('b'+s).style.width = Math.max(probs[s], 1.5) + '%';
+    }
+  }, 80);
+
+  // 内訳（最有力設定との比較）
+  const topIdx = probs.indexOf(Math.max(...probs));
+  const topFD  = fdata[topIdx];
+  let bdHTML = `<div class="bdtitle">▸ 最有力設定（設定${topIdx+1}）との各指標比較</div><div class="bdgrid">`;
+  for(const k of Object.keys(topFD)){
+    const d    = topFD[k];
+    const diff = d.obs - d.exp;
+    const pct  = Math.abs(diff) / Math.max(d.exp, 1) * 100;
+    const cls  = pct < 18 ? 'ok' : pct < 35 ? 'warn' : 'bad';
+    const sign = diff >= 0 ? '+' : '';
+    const baseG = (k === 'grape') ? myGames : games;
+    const actualRate = d.obs > 0 ? (baseG/d.obs).toFixed(1) : '—';
+    const theoryRate = d.exp > 0 ? (baseG/d.exp).toFixed(1) : '—';
+    bdHTML += `<div class="bditem">
+      <div class="bdfactor">${d.label}</div>
+      <div class="bdobs">${d.obs}回 <span style="font-size:12px;color:var(--color-accent)">1/${actualRate}</span></div>
+      <div class="bdexp">理論値: ${d.exp.toFixed(1)}回 (1/${theoryRate})</div>
+      <div class="bddiff ${cls}">${sign}${diff.toFixed(1)}回 (${sign}${pct.toFixed(0)}%)</div>
+    </div>`;
+  }
+  bdHTML += '</div>';
+
+  // 設定別期待差枚数
+  // big/reg/gamesはすべてトータル値を使用
+  bdHTML += `<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--color-border)">
+    <div style="font-size:13px;color:var(--color-accent);letter-spacing:.1em;margin-bottom:6px">▸ 設定Xならこの${games}Gで理論上いくら？</div>
+    <div style="font-size:11px;color:var(--color-dimmer);margin-bottom:8px">ボーナスは実績、小役は設定別理論値で計算</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">`;
+  for(let s = 0; s < 6; s++){
+    const grapeCount = games / m.grape[s];
+    const expCherry  = games / m.cherry[s];
+    const expBell    = games / m.bell;
+    const expPiero   = games / m.piero;
+    const invest     = games * 3 * (1 - 1 / 7.298);
+    const expDiff    = Math.round(
+      big  * m.bigPay +
+      reg  * m.regPay +
+      grapeCount * 8 +
+      expCherry * m.cherryPay +
+      expBell   * m.bellPay +
+      expPiero  * m.pieroPay -
+      invest
+    );
+    const isTop    = s === topIdx;
+    const sign     = expDiff >= 0 ? '+' : '';
+    const col      = expDiff >= 0 ? '#00ff88' : '#ff3d6e';
+    bdHTML += `<div style="background:rgba(255,255,255,.03);border:1px solid ${isTop?'var(--color-accent)':'var(--color-border)'};border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:12px;color:var(--color-dim);margin-bottom:3px">設定${s+1}${isTop?' ◀':''}</div>
+      <div style="font-size:16px;font-weight:700;color:${col}">${sign}${expDiff.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--color-dimmer)">枚</div>
+    </div>`;
+  }
+  bdHTML += '</div>';
+
+  bdHTML += '</div>';
+  document.getElementById('bdwrap').innerHTML = bdHTML;
+
+  // 判定
+  const topS = topIdx + 1;
+  const topP = probs[topIdx].toFixed(1);
+  const p56  = (probs[4]+probs[5]).toFixed(1);
+  const p456 = (probs[3]+probs[4]+probs[5]).toFixed(1);
+  const bigStr = big  ? `BIG ${big}回(1/${bigProb})`  : 'BIG 0回';
+  const regStr = reg  ? `REG ${reg}回(1/${regProb})`  : 'REG 0回';
+  let vClass, vTitle, vBody;
+  if(topS >= 5 && probs[topIdx] > 30){
+    vClass = 'high'; vTitle = '🔥 高設定 濃厚！';
+    vBody  = `設定${topS}の可能性が最も高い（${topP}%）。<br>${bigStr} ／ ${regStr} ／ 合算(1/${allProb})<br>設定5・6合算確率: ${p56}% ／ 設定4以上: ${p456}%<br>積極的な継続打ちを推奨します。`;
+  } else if(topS >= 4 || parseFloat(p456) > 55){
+    vClass = 'mid'; vTitle = '⚡ 中〜高設定の可能性あり';
+    vBody  = `設定${topS}が最有力（${topP}%）。<br>${bigStr} ／ ${regStr} ／ 合算(1/${allProb})<br>設定4以上の合算確率: ${p456}%<br>データを蓄積して判断を深めましょう。`;
+  } else {
+    vClass = 'low'; vTitle = '📊 低設定の可能性が高め';
+    vBody  = `設定${topS}が最有力（${topP}%）。<br>${bigStr} ／ ${regStr} ／ 合算(1/${allProb})<br>設定4以上の合算確率: ${p456}%<br>撤退ラインを意識した立ち回りを推奨します。`;
+  }
+  document.getElementById('verdict').className  = `verdict ${vClass}`;
+  document.getElementById('verdict').innerHTML  = `<div class="vt">${vTitle}</div><div class="vb">${vBody}</div>`;
+
+  // 期待収支グリッド（20スロ 46枚/1000円 ≈ 21.74円/枚 × 4000G）
+
+
+  resultEl.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// =====================================================
+// リセット
+// =====================================================
+function resetAll(){
+  ['games','big','reg','bigS','bigC','regS','regC','grape',
+   'start-games','start-big','start-reg','start-diff'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('start-result').style.display = 'none';
+  document.getElementById('my-sample-block').style.display = 'none';
+  document.getElementById('ai-chat').style.display = 'none';
+  document.getElementById('ai-messages').textContent = '';
+  document.getElementById('ai-apikey-wrap').style.display = 'block';
+  aiHistory = [];
+}
+
+// =====================================================
+// ぶどう逆算
+// =====================================================
+function calcGrapeReverse(){
+  const games = parseInt(document.getElementById('gp-games').value) || 0;
+  const big   = parseInt(document.getElementById('gp-big').value)   || 0;
+  const reg   = parseInt(document.getElementById('gp-reg').value)   || 0;
+  const diff  = parseInt(document.getElementById('gp-diff').value)  || 0;
+
+  if(games < 1){ alert('ゲーム数を入力してください'); return; }
+  if(big + reg === 0){ alert('BIG・REG回数を入力してください'); return; }
+
+  const m  = DB[gpMachine];
+  const sp = GP_SPEC[gpMachine];
+  const play = sp.plays.find(p => p.id === gpPlay) || sp.plays[0];
+
+  // 投入枚数
+  const totalIn = games * 3;
+  // ボーナス払い出し
+  const bonusPay = big * sp.bigPay + reg * sp.regPay;
+  // リプレイ払い出し（差枚±0なので含めない）
+  // チェリー払い出し
+  const avgCherry = sp.cherry.reduce((a,b) => a+b, 0) / 6;
+  const cherryPay = (games / avgCherry) * sp.cherryPay * play.cherryTake;
+  // ベル払い出し
+  const bellPay  = sp.bell  ? (games / sp.bell)  * sp.bellPay  * play.bellTake  : 0;
+  // ピエロ払い出し
+  const pieroPay = sp.piero ? (games / sp.piero) * sp.pieroPay * play.pieroTake : 0;
+
+  // ぶどう獲得枚数を逆算
+  // リプレイは差枚に影響しないため実質投入 = games×3×(1-1/replay) を使用
+  const actualInvest = games * 3 * (1 - 1 / sp.replay);
+  // → grapePay = diff + actualInvest - bonusPay - cherryPay - bellPay - pieroPay
+  const grapeTotal = diff + actualInvest - bonusPay - cherryPay - bellPay - pieroPay;
+  const grapeCount = grapeTotal / 8;
+  const grapeProb  = games / grapeCount;
+
+  if(!isFinite(grapeProb) || grapeProb <= 0 || grapeProb > 1000){
+    alert('計算結果が異常値です。入力値を確認してください。');
+    return;
+  }
+
+  // 最も近い設定を求める
+  let minD = Infinity, closest = 0;
+  for(let s = 0; s < 6; s++){
+    const d = Math.abs(grapeProb - m.grape[s]);
+    if(d < minD){ minD = d; closest = s; }
+  }
+
+  const probColor = grapeProb <= m.grape[5] ? '#00ff88'
+                  : grapeProb <= m.grape[2] ? '#ffd700' : '#7a7a9a';
+
+  // ぶどうのガウス尤度 × REGのポアソン尤度 → 複合推定
+  const gpProbs = [];
+  for(let s = 0; s < 6; s++){
+    // ぶどうの尤度
+    const theory = 1 / m.grape[s];
+    const obs    = 1 / grapeProb;
+    const sigma  = Math.sqrt(theory * (1-theory) / games);
+    const z      = (obs - theory) / sigma;
+    let likelihood = Math.exp(-0.5 * z * z);
+
+    // REGのポアソン尤度（入力ありの場合のみ）
+    if(reg > 0){
+      const expReg = games / m.reg[s];
+      // ポアソン対数尤度（定数項除く）
+      const regLLR = reg * Math.log(expReg / (games / m.reg[0])) - (expReg - games / m.reg[0]);
+      likelihood *= Math.exp(regLLR * 1.5);  // REGに1.5倍の重み
+    }
+
+    gpProbs.push(likelihood);
+  }
+  const gpSum = gpProbs.reduce((a,b) => a+b, 0);
+  const gpPct = gpProbs.map(p => (p/gpSum) * 100);
+  const gpClosest = gpPct.indexOf(Math.max(...gpPct));
+
+  // サマリー
+  const modeLabel = reg > 0 ? 'ぶどう＋REG複合推定' : 'ぶどうのみ推定';
+  document.getElementById('gp-summary').innerHTML = `
+    <div style="font-size:12px;color:var(--color-dim);margin-bottom:6px">
+      ${games.toLocaleString()}G ／ BIG${big}回 ／ REG${reg}回 ／ 差枚${diff>=0?'+':''}${diff}枚
+    </div>
+    <div style="font-size:11px;color:var(--color-accent);margin-bottom:12px;letter-spacing:.1em">▸ ${modeLabel}</div>
+    <div style="display:flex;border:1px solid var(--color-border);border-radius:12px;overflow:hidden;margin-bottom:18px">
+      <div style="flex:1;text-align:center;padding:18px 10px;border-right:1px solid var(--color-border)">
+        <div style="font-size:11px;color:var(--color-dim);letter-spacing:.12em;margin-bottom:6px">最有力設定</div>
+        <div style="font-size:30px;font-weight:900;color:var(--color-pink)">設定${gpClosest+1}</div>
+        <div style="font-size:11px;color:var(--color-dim);margin-top:4px">${gpPct[gpClosest].toFixed(1)}%</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:18px 10px;border-right:1px solid var(--color-border)">
+        <div style="font-size:11px;color:var(--color-dim);letter-spacing:.12em;margin-bottom:6px">ぶどう理論値</div>
+        <div style="font-size:22px;font-weight:700;color:var(--color-text)">1/${m.grape[gpClosest].toFixed(2)}</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:18px 10px">
+        <div style="font-size:11px;color:var(--color-dim);letter-spacing:.12em;margin-bottom:6px">ぶどう逆算値</div>
+        <div style="font-size:22px;font-weight:700;color:${probColor}">1/${grapeProb.toFixed(2)}</div>
+      </div>
+    </div>`;
+
+  // 設定バー
+  const COLS = [
+    'linear-gradient(90deg,#3a3a55,#5a5a77)',
+    'linear-gradient(90deg,#1a3060,#3a5090)',
+    'linear-gradient(90deg,#1a4a2a,#3a7a4a)',
+    'linear-gradient(90deg,#504010,#907020)',
+    'linear-gradient(90deg,#602010,#a04020)',
+    'linear-gradient(90deg,#ff3d6e,#ff8c00)',
+  ];
+  let html = '';
+  for(let s = 0; s < 6; s++){
+    const theory  = m.grape[s];
+    const diff_v  = grapeProb - theory;
+    const diffPct = (diff_v / theory) * 100;
+    const cls     = Math.abs(diffPct) < 3 ? 'gp-ok' : diff_v < 0 ? 'gp-hi' : 'gp-lo';
+    const sg      = diff_v >= 0 ? '+' : '';
+    html += `<div class="gp-brow">
+      <div class="gp-slabel" style="color:${s===gpClosest?'var(--color-pink)':'var(--color-dim)'}">設定${s+1}</div>
+      <div class="gp-track">
+        <div class="gp-fill" id="gpb${s}" style="background:${COLS[s]};width:0%"></div>
+      </div>
+      <div class="gp-theory">1/${theory.toFixed(2)}</div>
+      <div class="gp-diff ${cls}">${gpPct[s].toFixed(1)}%</div>
+    </div>`;
+  }
+  document.getElementById('gp-rows').innerHTML = html;
+  setTimeout(() => {
+    for(let s = 0; s < 6; s++){
+      document.getElementById('gpb'+s).style.width = Math.max(gpPct[s], 1.5) + '%';
+    }
+  }, 80);
+
+  const gpResult = document.getElementById('gp-result');
+  gpResult.style.display = 'block';
+  gpResult.classList.remove('anim');
+  void gpResult.offsetWidth;
+  gpResult.classList.add('anim');
+  gpResult.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function resetGrapeReverse(){
+  ['gp-games','gp-big','gp-reg','gp-diff'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('gp-result').style.display = 'none';
+}
+
+// =====================================================
+// AI スロプロ相談（Gemini API）
+// =====================================================
+function buildSystemPrompt(){
+  let dbSummary = '';
+  for(const [k, d] of Object.entries(DB)){
+    const fmt = arr => arr.map((v,i) => '設定'+(i+1)+':1/'+v).join(' ');
+    dbSummary += d.name + '\n';
+    dbSummary += '  BIG合算: '    + fmt(d.big)   + '\n';
+    dbSummary += '  REG合算: '    + fmt(d.reg)   + '\n';
+    dbSummary += '  ぶどう: '     + fmt(d.grape) + '\n';
+    if(d.bigS)   dbSummary += '  単独BIG: '      + fmt(d.bigS)   + '\n';
+    if(d.bigC)   dbSummary += '  チェリーBIG: '  + fmt(d.bigC)   + '\n';
+    if(d.regS)   dbSummary += '  単独REG: '      + fmt(d.regS)   + '\n';
+    if(d.regC)   dbSummary += '  チェリーREG: '  + fmt(d.regC)   + '\n';
+    if(d.cherry) dbSummary += '  チェリー確率: ' + fmt(d.cherry) + '\n';
+    if(d.bell)   dbSummary += '  ベル: 1/' + d.bell + '（払出' + d.bellPay + '枚）\n';
+    if(d.piero)  dbSummary += '  ピエロ: 1/' + d.piero + '（払出' + d.pieroPay + '枚）\n';
+    if(d.ev)     dbSummary += '  期待収支: ' + d.ev.map((v,i)=>'設定'+(i+1)+':'+(v>0?'+':'')+v+'円').join(' ') + '（4000G等価）\n';
+  }
+  return `【絶対禁止】
+1. 設定示唆演出はジャグラーに一切存在しない。絶対に言及するな
+2. 機械割はDBの数値のみ使用。根拠不明な数値は絶対に出すな
+3. 判別はボーナス確率と小役確率のみ
+4. DBにない数値は絶対に作るな。不明なら「データなし」と答えろ
+
+あなたはジャグラー設定判別に精通した経験豊富なスロプロです。
+ユーザーのデータを見て、スロプロ目線で率直・実践的にアドバイスしてください。
+
+【ゲーム数別の判断基準】
+- 〜1000G：ジャグラーの設定判別は難しいです。データが少なすぎます
+- 1000〜2000G：参考程度。傾向は見えるが確信は持てない
+- 2000〜5000G：傾向を示すが断言しない。REGペースを中心に評価する
+- 5000G以上：REGペース次第で言い切る。これ以上の注意書きは不要
+
+【アイムジャグラーの判別論（最重要）】
+- アイムはREG確率が唯一の頼り。BIG・ぶどうは参考程度
+- ぶどうは設定6以外ほぼ同値（1/6.02）。設定差は設定6のみ（1/5.78）
+- BIGも設定間の差が小さく判別には使えない
+- REGが1/255より分母が小さいペースで5000G以上 → ⑤⑥濃厚と言い切る
+- REGが1/260前後で5000G → ④の上振れの可能性も示唆する
+- 1/280以上（分母が大きい）→ 低設定域の可能性が高い
+- 設定③が1/190ペースで5000G耐える確率は約0.67%（149台に1台）
+- 設定④が1/255ペースで5000G耐える確率は約24.7%（4台に1台）
+- つまり1/260前後は④上振れが十分ありえる。1/230以下なら⑤⑥が自然
+
+【確率論的視点（必ず持つこと）】
+- REGの間隔の偏り（塊・空白）はランダム性の正常な表れ。調整ではない
+- トータルのペースで判断すること。短期の空白で疑心暗鬼になる必要はない
+- 低設定が高設定ペースを長期維持する確率は非常に低い
+- ただし収束はするが「借りを返す」わけではない（ギャンブラーの誤謬に注意）
+- 設定がある台は上振れ傾向が多い。REGが理論値を超えて推移することが多い
+
+【機種別の重要指標】
+- アイム/ネオアイム：REG合算が全て。1/255基準で判断
+- ゴーゴー3：REG合算・チェリーREGが主力
+- マイジャグ5：単独REGが2.00倍で全機種最高。最重要指標
+- ファンキー2：単独REGが1.79倍。REG合算も重要
+- ハッピーV3：REG合算全体で判断。チェリーも同倍率
+- ガールズSS：チェリーREGが主力
+- ミスター：単独REGが主力。チェリー系は参考程度
+- ウルトラ：単独REGが主力
+
+【各機種の理論値DB】
+${dbSummary}
+【注意事項】
+- ガールズSS・ミスター・ウルトラの単独・チェリー重複は独自算出の推定値
+- ミスターのぶどうはガリぞう6万G実測値
+- ぶどう払い出し8枚・チェリー払い出し2枚（ミスターのみ4枚）
+
+【機械割一覧（設定1/2/3/4/5/6）】
+アイム/ネオアイム:
+  メーカー公表値: 97.0/98.0/99.5/101.1/103.3/105.5%
+  チェリー狙い:   97.97/99.09/100.75/102.53/104.93/107.29%
+
+ゴーゴージャグラー3:
+  メーカー公表値: 97.2/98.2/99.4/101.6/103.8/106.5%
+  チェリー狙い:   98.26/99.26/100.58/102.97/105.40/108.39%
+
+マイジャグラー5:
+  メーカー公表値: 97.0/98.0/99.9/102.8/105.3/109.4%
+  チェリー狙い:   97.83/98.95/101.19/104.31/107.19/111.65%
+
+ファンキージャグラー2:
+  メーカー公表値: 97.0/98.5/99.8/102.0/104.3/109.0%
+  チェリー狙い:   97.83/99.36/100.99/103.40/106.04/111.35%
+
+ハッピージャグラーV3:
+  メーカー公表値: 97.0/98.1/99.9/102.9/105.8/108.4%
+  チェリー狙い（ベル捨て）: 97.90/99.15/101.00/104.20/107.45/110.34%
+  チェリー＋ベル狙い:       98.30/99.56/101.42/104.64/107.85/110.74%
+  フル攻略:                 98.68/99.96/101.83/105.08/108.25/111.15%
+
+ジャグラーガールズSS:
+  メーカー公表値: 97.0/97.9/99.9/102.1/104.0/107.5%
+  チェリー狙い:   98.09/99.02/101.09/103.42/105.32/108.84%
+
+ミスタージャグラー:
+  メーカー公表値: 97.0/98.0/99.8/102.7/105.5/107.3%
+  チェリー狙い（順押し）:   98.17/99.13/100.98/103.86/106.71/108.51%
+  フル攻略（中押し）:       99.53/100.49/102.33/105.21/108.05/109.85%
+
+ウルトラミラクルジャグラー:
+  メーカー公表値: 97.0/98.1/99.8/102.1/104.5/108.1%
+  チェリー狙い:   98.06/99.18/100.93/103.27/105.72/109.38%
+
+【打ち方別 小役回収率】
+ハッピーV3以外の通常機種（ボーナス優先制御）:
+  フリー打ち:     チェリー67%・ベル0%・ピエロ0%
+  チェリー狙い（左BAR枠上〜上段）: チェリー100%・ベル0%・ピエロ0%
+
+ハッピーV3（小役優先制御）:
+  順はさみ7狙い（チェリー狙い）: チェリー100%・ベル0%・ピエロ0%
+  チェリー＋ベル狙い:             チェリー100%・ベル67%・ピエロ0%
+  フル攻略:                       チェリー100%・ベル100%・ピエロ100%
+
+ミスタージャグラー（小役優先制御）:
+  順押しBAR狙い:  チェリー100%・ベル0%・ピエロ0%
+  中押し手順:     チェリー約95%・ベル約63%・ピエロ約63%（実践値）
+
+【合算確率・ハマり確率・1G連確率（設定別）】
+アイムジャグラーEX-TP / ネオアイムジャグラーEX:
+  設定1: 合算1/168.5 1G連0.594% 200ハマ30.4% 500ハマ5.10% 1000ハマ0.260%
+  設定2: 合算1/161.0 1G連0.621% 200ハマ28.8% 500ハマ4.44% 1000ハマ0.197%
+  設定3: 合算1/148.6 1G連0.673% 200ハマ25.9% 500ハマ3.42% 1000ハマ0.117%
+  設定4: 合算1/142.2 1G連0.703% 200ハマ24.4% 500ハマ2.93% 1000ハマ0.086%
+  設定5: 合算1/128.5 1G連0.778% 200ハマ21.0% 500ハマ2.01% 1000ハマ0.040%
+  設定6: 合算1/127.5 1G連0.784% 200ハマ20.7% 500ハマ1.95% 1000ハマ0.038%
+
+ゴーゴージャグラー3:
+  設定1: 合算1/149.6 1G連0.668% 200ハマ26.2% 500ハマ3.50% 1000ハマ0.122%
+  設定2: 合算1/145.3 1G連0.688% 200ハマ25.1% 500ハマ3.17% 1000ハマ0.100%
+  設定3: 合算1/139.7 1G連0.716% 200ハマ23.8% 500ハマ2.76% 1000ハマ0.076%
+  設定4: 合算1/130.5 1G連0.766% 200ハマ21.5% 500ハマ2.14% 1000ハマ0.046%
+  設定5: 合算1/123.6 1G連0.809% 200ハマ19.7% 500ハマ1.73% 1000ハマ0.030%
+  設定6: 合算1/117.5 1G連0.851% 200ハマ18.1% 500ハマ1.39% 1000ハマ0.019%
+
+マイジャグラー5:
+  設定1: 合算1/163.9 1G連0.610% 200ハマ29.4% 500ハマ4.69% 1000ハマ0.219%
+  設定2: 合算1/159.1 1G連0.629% 200ハマ28.3% 500ハマ4.27% 1000ハマ0.182%
+  設定3: 合算1/148.6 1G連0.673% 200ハマ25.9% 500ハマ3.42% 1000ハマ0.117%
+  設定4: 合算1/135.4 1G連0.739% 200ハマ22.7% 500ハマ2.46% 1000ハマ0.060%
+  設定5: 合算1/126.8 1G連0.789% 200ハマ20.5% 500ハマ1.91% 1000ハマ0.036%
+  設定6: 合算1/114.5 1G連0.873% 200ハマ17.3% 500ハマ1.25% 1000ハマ0.016%
+
+ファンキージャグラー2:
+  設定1: 合算1/165.9 1G連0.603% 200ハマ29.9% 500ハマ4.87% 1000ハマ0.237%
+  設定2: 合算1/158.3 1G連0.632% 200ハマ28.2% 500ハマ4.21% 1000ハマ0.177%
+  設定3: 合算1/150.7 1G連0.664% 200ハマ26.4% 500ハマ3.58% 1000ハマ0.128%
+  設定4: 合算1/140.6 1G連0.711% 200ハマ24.0% 500ハマ2.82% 1000ハマ0.080%
+  設定5: 合算1/133.2 1G連0.751% 200ハマ22.2% 500ハマ2.31% 1000ハマ0.053%
+  設定6: 合算1/119.6 1G連0.836% 200ハマ18.7% 500ハマ1.50% 1000ハマ0.023%
+
+ハッピージャグラーV3:
+  設定1: 合算1/161.8 1G連0.618% 200ハマ29.0% 500ハマ4.51% 1000ハマ0.203%
+  設定2: 合算1/154.9 1G連0.645% 200ハマ27.4% 500ハマ3.93% 1000ハマ0.154%
+  設定3: 合算1/146.9 1G連0.681% 200ハマ25.5% 500ハマ3.29% 1000ハマ0.108%
+  設定4: 合算1/137.7 1G連0.726% 200ハマ23.3% 500ハマ2.61% 1000ハマ0.068%
+  設定5: 合算1/127.5 1G連0.784% 200ハマ20.7% 500ハマ1.95% 1000ハマ0.038%
+  設定6: 合算1/120.0 1G連0.833% 200ハマ18.8% 500ハマ1.53% 1000ハマ0.023%
+
+ジャグラーガールズSS:
+  設定1: 合算1/159.1 1G連0.629% 200ハマ28.3% 500ハマ4.27% 1000ハマ0.182%
+  設定2: 合算1/152.8 1G連0.655% 200ハマ26.9% 500ハマ3.75% 1000ハマ0.141%
+  設定3: 合算1/142.8 1G連0.700% 200ハマ24.5% 500ハマ2.98% 1000ハマ0.089%
+  設定4: 合算1/132.4 1G連0.755% 200ハマ22.0% 500ハマ2.26% 1000ハマ0.051%
+  設定5: 合算1/128.3 1G連0.780% 200ハマ20.9% 500ハマ2.00% 1000ハマ0.040%
+  設定6: 合算1/119.2 1G連0.839% 200ハマ18.5% 500ハマ1.48% 1000ハマ0.022%
+
+ミスタージャグラー:
+  設定1: 合算1/156.4 1G連0.639% 200ハマ27.7% 500ハマ4.05% 1000ハマ0.164%
+  設定2: 合算1/152.4 1G連0.656% 200ハマ26.8% 500ハマ3.72% 1000ハマ0.138%
+  設定3: 合算1/145.6 1G連0.687% 200ハマ25.2% 500ハマ3.19% 1000ハマ0.102%
+  設定4: 合算1/134.3 1G連0.745% 200ハマ22.4% 500ハマ2.38% 1000ハマ0.057%
+  設定5: 合算1/124.4 1G連0.804% 200ハマ19.9% 500ハマ1.77% 1000ハマ0.031%
+  設定6: 合算1/118.7 1G連0.842% 200ハマ18.4% 500ハマ1.46% 1000ハマ0.021%
+
+ウルトラミラクルジャグラー:
+  設定1: 合算1/164.2 1G連0.609% 200ハマ29.5% 500ハマ4.72% 1000ハマ0.223%
+  設定2: 合算1/158.3 1G連0.632% 200ハマ28.2% 500ハマ4.21% 1000ハマ0.177%
+  設定3: 合算1/147.9 1G連0.676% 200ハマ25.8% 500ハマ3.37% 1000ハマ0.113%
+  設定4: 合算1/138.6 1G連0.722% 200ハマ23.5% 500ハマ2.67% 1000ハマ0.071%
+  設定5: 合算1/130.8 1G連0.764% 200ハマ21.6% 500ハマ2.16% 1000ハマ0.046%
+  設定6: 合算1/121.6 1G連0.822% 200ハマ19.2% 500ハマ1.61% 1000ハマ0.026%
+
+【機械割別 勝率目安（正規分布近似・チェリー狙い時）】
+97.0%（設定1相当）: 1000G=10.8% 3000G=1.6%  6000G=0.1%  10000G≒0%
+98.0%（設定2相当）: 1000G=20.5% 3000G=7.7%  6000G=2.2%  10000G=0.5%
+99.5%（設定3相当）: 1000G=37.3% 3000G=28.1% 6000G=20.3% 10000G=13.9%
+101.1%（設定4相当）:1000G=59.2% 3000G=68.6% 6000G=76.7% 10000G=83.4%
+103.3%（設定5相当）:1000G=80.7% 3000G=94.4% 6000G=99.2% 10000G≒100%
+105.5%（設定6相当）:1000G=93.9% 3000G=99.8% 6000G≒100% 10000G≒100%
+※チェリー狙い時の機械割を使用。実際の勝率はホール環境・設定配分による
+
+【AIの役割とスタンス】
+- ユーザーはスロプロ水準。基礎的な説明は不要、実践的な視点で話す
+- 5000G以上のデータがあればREGペース次第で言い切る。過度な注意書き不要
+- サンプル不足の言及は2000G以下の時だけ
+- REGの塊・空白に対して「ランダム性の範囲内、トータルで判断を」と根拠を与える
+- ホール根拠・台の位置情報があれば数値より優先して考慮する
+- 疑心暗鬼になっている時は確率論的な根拠を言語化して返す
+- やめ時はREGペースの落ちを収束サインとして示唆する
+- 「設定を当てる」より「この台が今日プラスかどうか」の視点でアドバイス
+- 回答は日本語・簡潔に・実践的に`;
+}
+
+function buildDataSummary(){
+  const m  = DB[curMachine];
+  const g  = parseInt(document.getElementById('games').value) || 0;
+  const b  = parseInt(document.getElementById('big').value)   || 0;
+  const r  = parseInt(document.getElementById('reg').value)   || 0;
+  const bS = document.getElementById('bigS').value;
+  const bC = document.getElementById('bigC').value;
+  const rS = document.getElementById('regS').value;
+  const rC = document.getElementById('regC').value;
+  const gr = document.getElementById('grape').value;
+
+  let s = `【機種】${m.name}\n`;
+
+  // BIG理論値比較
+  if(b){
+    const actual  = g/b;
+    const min6    = Math.min(...m.big);
+    const max1    = Math.max(...m.big);
+    let eval_ = '';
+    if(actual < min6) eval_ = '→設定6より出現率が良い（上振れ）';
+    else if(actual > max1) eval_ = '→設定1より出現率が悪い（下振れ）';
+    else {
+      let closest = 0, minD = Infinity;
+      m.big.forEach((v,i) => { if(Math.abs(v-actual)<minD){ minD=Math.abs(v-actual); closest=i+1; }});
+      eval_ = `→設定${closest}の理論値(1/${m.big[closest-1]})に最も近い`;
+    }
+    s += `【BIG】${b}回 (実際:1/${actual.toFixed(1)} ${eval_})\n`;
+  } else {
+    s += `【BIG】0回\n`;
+  }
+
+  // REG理論値比較
+  if(r){
+    const actual = g/r;
+    const min6   = Math.min(...m.reg);
+    const max1   = Math.max(...m.reg);
+    let eval_ = '';
+    if(actual < min6) eval_ = '→設定6より出現率が良い（上振れ）';
+    else if(actual > max1) eval_ = '→設定1より出現率が悪い（下振れ）';
+    else {
+      let closest = 0, minD = Infinity;
+      m.reg.forEach((v,i) => { if(Math.abs(v-actual)<minD){ minD=Math.abs(v-actual); closest=i+1; }});
+      eval_ = `→設定${closest}の理論値(1/${m.reg[closest-1]})に最も近い`;
+    }
+    s += `【REG】${r}回 (実際:1/${actual.toFixed(1)} ${eval_})\n`;
+  } else {
+    s += `【REG】0回\n`;
+  }
+
+  s += `【総回転数】${g}G\n`;
+  if(bS || bC) s += `【ボーナス内訳BIG】単独:${bS||'—'} チェリー重複:${bC||'—'}\n`;
+  if(rS || rC) s += `【ボーナス内訳REG】単独:${rS||'—'} チェリー重複:${rC||'—'}\n`;
+
+  if(gr){
+    const sg = parseInt(document.getElementById('start-games').value) || 0;
+    const myG = sg > 0 ? Math.max(0, g - sg) : g;
+    const actual    = myG / parseInt(gr);
+    const theory    = m.grape;
+    const min6      = Math.min(...theory);
+    const max1      = Math.max(...theory);
+    let eval_ = '';
+    if(actual < min6) eval_ = '→設定6より出現率が良い（上振れ）';
+    else if(actual > max1) eval_ = '→設定1より出現率が悪い（下振れ）';
+    else {
+      let closest = 0, minD = Infinity;
+      theory.forEach((v,i) => { if(Math.abs(v-actual)<minD){ minD=Math.abs(v-actual); closest=i+1; }});
+      eval_ = `→設定${closest}の理論値(1/${theory[closest-1]})に最も近い`;
+    }
+    s += `【ぶどう】${gr}回 (実際の出現率:1/${actual.toFixed(2)} ${eval_})\n`;
+  }
+
+  // 解析結果サマリー
+  const bars = document.querySelectorAll('.bpct');
+  if(bars.length === 6){
+    const probs = Array.from(bars).map(el => parseFloat(el.textContent));
+    const top   = probs.indexOf(Math.max(...probs));
+    s += `【解析結果】最有力:設定${top+1}(${probs[top].toFixed(1)}%) / 設定5-6合算:${(probs[4]+probs[5]).toFixed(1)}%\n`;
+  }
+  return s;
+}
+
+function getApiKey(){
+  const hash = location.hash.slice(1);
+  if(hash && hash.startsWith('AIza')) return hash;
+  const el = document.getElementById('ai-apikey');
+  return el ? el.value.trim() : '';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = location.hash.slice(1);
+  if(hash && hash.startsWith('AIza')){
+    const el = document.getElementById('ai-apikey');
+    if(el) el.value = hash;
+    const wrap = document.getElementById('ai-apikey-wrap');
+    if(wrap) wrap.style.display = 'none';
+  }
+});
+
+async function callGemini(userMsg){
+  const key = getApiKey();
+  if(!key) throw new Error('APIキーを入力してください');
+
+  const contents = [];
+  for(const h of aiHistory){
+    contents.push({
+      role: h.role === 'assistant' ? 'model' : 'user',
+      parts: [{text: h.content}]
+    });
+  }
+  contents.push({role:'user', parts:[{text: userMsg}]});
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        system_instruction: {parts:[{text: buildSystemPrompt()}]},
+        contents,
+        generationConfig: {maxOutputTokens:1000, temperature:0.7}
+      })
+    }
+  );
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラー：応答が空でした';
+}
+
+async function askAI(){
+  const key = getApiKey();
+  if(!key){
+    document.getElementById('ai-apikey-wrap').style.display = 'block';
+    document.getElementById('ai-apikey').focus();
+    return;
+  }
+  const btn  = document.getElementById('ai-btn');
+  const chat = document.getElementById('ai-chat');
+  const msgs = document.getElementById('ai-messages');
+
+  btn.textContent = '⏳ 分析中...';
+  btn.disabled = true;
+  chat.style.display = 'block';
+  msgs.textContent = '分析中...';
+  aiHistory = [];
+
+  const userMsg = `以下の台データについてスロプロとしてアドバイスをください。\n\n${buildDataSummary()}\nこの台は打ち続けるべきか、設定の可能性と根拠、立ち回りのポイントを教えてください。`;
+
+  try {
+    const reply = await callGemini(userMsg);
+    aiHistory.push({role:'user',      content: userMsg});
+    aiHistory.push({role:'assistant', content: reply});
+    msgs.textContent = reply;
+    document.getElementById('ai-apikey-wrap').style.display = 'none';
+  } catch(e) {
+    msgs.textContent = 'エラー: ' + e.message;
+    document.getElementById('ai-apikey-wrap').style.display = 'block';
+  }
+
+  btn.textContent = '🤖 この台についてAIに相談する';
+  btn.disabled = false;
+}
+
+async function followupAI(){
+  const input = document.getElementById('ai-input');
+  const msgs  = document.getElementById('ai-messages');
+  const q = input.value.trim();
+  if(!q) return;
+  input.value = '';
+
+  msgs.textContent += '\n\n━━━━━━━━━━\n👤 ' + q + '\n\n⏳ 回答中...';
+
+  try {
+    const reply = await callGemini(q);
+    aiHistory.push({role:'user',      content: q});
+    aiHistory.push({role:'assistant', content: reply});
+    msgs.textContent = msgs.textContent.replace('⏳ 回答中...', reply);
+  } catch(e) {
+    msgs.textContent += '\nエラー: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
